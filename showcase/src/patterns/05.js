@@ -117,6 +117,7 @@ const { Provider } = MediumClapContext
 const MediumClap = ({
   children,
   onClap,
+  values = null,
   style: userStyles = {},
   className
 }) => {
@@ -141,31 +142,39 @@ const MediumClap = ({
 
   const componentJustMounted = useRef(true)
   useEffect(() => {
-    if (!componentJustMounted.current) {
-      console.log('onClap was called!!!')
+    if (!componentJustMounted.current && !isControlled) {
       onClap && onClap(clapState)
     }
     componentJustMounted.current = false
-  }, [count])
+  }, [count, onClap, isControlled])
 
+  // controlled component?
+  const isControlled = !!values && onClap
   const handleClapClick = () => {
     animationTimeline.replay()
-    setClapState(prevState => ({
-      isClicked: true,
-      count: Math.min(count + 1, MAXIMUM_USER_CLAP),
-      countTotal:
-        count < MAXIMUM_USER_CLAP
-          ? prevState.countTotal + 1
-          : prevState.countTotal
-    }))
+    isControlled
+      ? onClap()
+      : setClapState(prevState => ({
+          isClicked: true,
+          count: Math.min(count + 1, MAXIMUM_USER_CLAP),
+          countTotal:
+            count < MAXIMUM_USER_CLAP
+              ? prevState.countTotal + 1
+              : prevState.countTotal
+        }))
   }
+  const getState = useCallback(() => (isControlled ? values : clapState), [
+    isControlled,
+    values,
+    clapState
+  ])
 
   const memoizedValue = useMemo(
     () => ({
-      ...clapState,
+      ...getState(),
       setRef
     }),
-    [clapState, setRef]
+    [getState, setRef]
   )
 
   const classNames = [styles.clap, className].join(' ').trim()
