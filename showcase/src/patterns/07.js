@@ -189,6 +189,18 @@ const MediumClap = () => {
  * subcomponents
  */
 
+const ClapContainer = ({ children, setRef, handleClick, ...restProps }) => {
+  return (
+    <button
+      ref={setRef}
+      className={styles.clap}
+      onClick={handleClick}
+      {...restProps}
+    >
+      {children}
+    </button>
+  )
+}
 const ClapIcon = ({ isClicked }) => {
   return (
     <span>
@@ -203,17 +215,17 @@ const ClapIcon = ({ isClicked }) => {
     </span>
   )
 }
-const ClapCount = ({ count, setRef }) => {
+const ClapCount = ({ count, setRef, ...restProps }) => {
   return (
-    <span ref={setRef} data-refkey='clapCountRef' className={styles.count}>
+    <span ref={setRef} className={styles.count} {...restProps}>
       + {count}
     </span>
   )
 }
 
-const CountTotal = ({ countTotal, setRef }) => {
+const CountTotal = ({ countTotal, setRef, ...restProps }) => {
   return (
-    <span ref={setRef} data-refkey='clapTotalRef' className={styles.total}>
+    <span ref={setRef} className={styles.total} {...restProps}>
       {countTotal}
     </span>
   )
@@ -222,9 +234,38 @@ const CountTotal = ({ countTotal, setRef }) => {
 /**
  * Usage
  */
-
 const Usage = () => {
-  return <MediumClap />
+  const [clapState, updateClapState] = useClapState()
+  const { count, countTotal, isClicked } = clapState
+
+  const [{ clapRef, clapCountRef, clapTotalRef }, setRef] = useDOMRef()
+
+  const animationTimeline = useClapAnimation({
+    clapEl: clapRef,
+    countEl: clapCountRef,
+    clapTotalEl: clapTotalRef
+  })
+
+  useEffectAfterMount(() => {
+    animationTimeline.replay()
+  }, [count])
+
+  return (
+    <ClapContainer
+      setRef={setRef}
+      onClick={updateClapState}
+      data-refkey='clapRef'
+    >
+      {/* <ClapIcon isClicked={isClicked} /> */}
+      🇳🇬
+      <ClapCount count={count} setRef={setRef} data-refkey='clapCountRef' />
+      <CountTotal
+        countTotal={countTotal}
+        setRef={setRef}
+        data-refkey='clapTotalRef'
+      />
+    </ClapContainer>
+  )
 }
 
 export default Usage
