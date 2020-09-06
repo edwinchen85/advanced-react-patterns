@@ -325,7 +325,8 @@ const Usage = () => {
         />
       </ClapContainer>
       <section>
-        <button onClick={reset} className={userStyles.resetBtn}>
+        {/* to prevent uncanny bugs, disable the button while uploading by adding a "disabled" attribute as seen below 👇 */}
+        <button onClick={reset} className={userStyles.resetBtn} disabled={uploadingReset}>
           reset
         </button>
         <pre className={userStyles.resetMsg}>
