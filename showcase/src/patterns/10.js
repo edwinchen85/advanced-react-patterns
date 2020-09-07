@@ -3,7 +3,8 @@ import React, {
   useLayoutEffect,
   useCallback,
   useRef,
-  useEffect
+  useEffect,
+  useReducer
 } from 'react'
 import mojs from 'mo-js'
 import styles from './index.css'
@@ -144,33 +145,38 @@ const callFnsInSequence = (...fns) => (...args) => {
 /**
  * custom hook for useClapState
  */
+const MAXIMUM_USER_CLAP = 50
+const reducer = ({ count, countTotal }, { type, payload }) => {
+  switch (type) {
+    case 'clap':
+      return {
+        isClicked: true,
+        count: Math.min(count + 1, MAXIMUM_USER_CLAP),
+        countTotal: count < MAXIMUM_USER_CLAP ? countTotal + 1 : countTotal
+      }
+    case 'reset':
+      return payload
+    default:
+      break
+  }
+}
 const useClapState = (initialState = INITIAL_STATE) => {
-  const MAXIMUM_USER_CLAP = 50
   const userInitialState = useRef(initialState)
 
-  const [clapState, setClapState] = useState(initialState)
+  const [clapState, dispatch] = useReducer(reducer, initialState)
   const { count, countTotal } = clapState
 
-  const updateClapState = useCallback(() => {
-    setClapState(({ count, countTotal }) => ({
-      isClicked: true,
-      count: Math.min(count + 1, MAXIMUM_USER_CLAP),
-      countTotal: count < MAXIMUM_USER_CLAP ? countTotal + 1 : countTotal
-    }))
-  }, [count, countTotal])
+  const updateClapState = () => dispatch({ type: 'clap' })
 
   // glorified counter
   const resetRef = useRef(0)
   const prevCount = usePrevious(count)
   const reset = useCallback(() => {
-    // Allow users call reset when they want. Managing any conditionals themselves 👇
-    // ⚠️ To prevent the bug where resets don't work after clicking beyond MAX_COUNT, 
-    // remove the if conditional below.  Thanks to @Nsquik for reporting this. 
     if (prevCount !== count) {
-      setClapState(userInitialState.current)
+      dispatch({ type: 'reset', payload: userInitialState.current })
       resetRef.current++
     }
-  }, [prevCount, count, setClapState])
+  }, [prevCount, count, dispatch])
 
   const getTogglerProps = ({ onClick, ...otherProps } = {}) => ({
     onClick: callFnsInSequence(updateClapState, onClick),
@@ -325,8 +331,7 @@ const Usage = () => {
         />
       </ClapContainer>
       <section>
-        {/* to prevent uncanny bugs, disable the button while uploading by adding a "disabled" attribute as seen below 👇 */}
-        <button onClick={reset} className={userStyles.resetBtn} disabled={uploadingReset}>
+        <button onClick={reset} className={userStyles.resetBtn}>
           reset
         </button>
         <pre className={userStyles.resetMsg}>
